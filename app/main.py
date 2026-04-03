@@ -29,7 +29,7 @@ def run_pipeline(text):
     pass_validation = validate_pass(cog_pass, frame, intent)
 
     # L4 → Validation
-    validation = validate_frame(frame)
+    validation = validate_frame(frame, concepts)
 
     # L11 → Evaluation
     score = score_evaluation(validation, pass_validation)
@@ -61,4 +61,5 @@ if __name__ == "__main__":
 
     output = run_pipeline(user_input)
     print("\n--- OUTPUT ---")
-    print(output)
+    # print(output)
+    print("\n".join(output))

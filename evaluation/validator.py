@@ -1,4 +1,4 @@
-def validate_frame(frame):
+def validate_frame(frame, concepts):
     errors = []
     data = frame.get("data", {})
 
@@ -15,6 +15,29 @@ def validate_frame(frame):
         if not P:
             errors.append("missing property/action (P)")
 
+        # 🔴 CONCEPT-AWARE VALIDATION
+        if I and P:
+            for concept_item in concepts:
+                concept = concept_item.get("concept")
+                word = concept_item.get("word")
+
+                if concept:
+                    allowed = concept.get("can_do", [])
+
+                    def normalize_action(action):
+                        # basic normalization (MVP level)
+                        if action.endswith("s"):
+                            return action[:-1]
+                        return action
+
+                    for action in P:
+                        normalized = normalize_action(action)
+
+                        if normalized not in allowed:
+                            errors.append(
+                                f"concept violation: '{word}' cannot perform '{action}'"
+                            )
+                            
     if frame["type"] == "cause":
         if not I:
             errors.append("missing entity (I)")
