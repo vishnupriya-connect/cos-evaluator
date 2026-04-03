@@ -8,6 +8,16 @@ def score_evaluation(frame_validation, pass_validation):
 
     # 🔴 TIER 1 — NO STRUCTURE → HARD FAIL
     if not frame_valid:
+        # 🔴 distinguish structural vs concept failure
+        has_concept_error = any("concept violation" in err for err in errors)
+
+        if has_concept_error:
+            return {
+                "final_score": 0.2,
+                "error_count": len(errors),
+                "errors": errors
+            }
+
         return {
             "final_score": 0.0,
             "error_count": len(errors),
@@ -18,21 +28,22 @@ def score_evaluation(frame_validation, pass_validation):
     if frame_valid and not pass_valid:
         score = 0.5
 
-        # critical reasoning errors → reduce but NOT zero
         for err in errors:
-            if "invalid cause direction" in err:
+
+            # 🔴 CONCEPT ERROR (HIGH IMPACT)
+            if "concept violation" in err:
+                score -= 0.5
+
+            # 🔴 STRUCTURAL REASONING ERROR
+            elif "invalid cause direction" in err:
                 score -= 0.2
 
-        score -= 0.1 * len(errors)
+            # 🔴 GENERIC ERROR
+            else:
+                score -= 0.1
 
-        if score < 0.2:
-            score = 0.2  # floor (important)
-
-        return {
-            "final_score": round(score, 2),
-            "error_count": len(errors),
-            "errors": errors
-        }
+        if score < 0.0:
+            score = 0.0
 
     # 🔴 TIER 3 — FULLY VALID
     return {
