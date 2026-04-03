@@ -1,4 +1,5 @@
-from concepts.concept_registry import get_concept
+from concepts.concept_registry import get_concept, get_vocabulary
+from concepts.spell_corrector import correct_word
 
 
 def map_concepts(parsed):
@@ -7,12 +8,16 @@ def map_concepts(parsed):
     concepts = []
 
     if I:
+        vocabulary = get_vocabulary()
+
         for word in I:
-            concept = get_concept(word)
+            corrected_word = correct_word(word, vocabulary)
+            concept = get_concept(corrected_word)
+
             if concept:
                 concepts.append({
-                    "word": word,
-                    "concept": concept
+                    "word": corrected_word,
+                    "concept": concept,
                 })
 
     return concepts

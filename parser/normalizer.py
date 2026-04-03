@@ -1,21 +1,30 @@
+from concepts.concept_registry import get_vocabulary
+from concepts.spell_corrector import correct_word
+
+
 def normalize_parsed(parsed):
     I = parsed.get("I")
     P = parsed.get("P")
     C = parsed.get("C")
+
+    vocabulary = get_vocabulary()
 
     def normalize_word(word):
         # do not normalize short words
         if len(word) <= 3:
             return word
 
-        # do not normalize known verbs
+        # protected words
         protected = {"is", "was", "has", "this", "his"}
         if word in protected:
             return word
 
-        # plural → singular (simple rule)
+        # plural → singular
         if word.endswith("s"):
-            return word[:-1]
+            word = word[:-1]
+
+        # 🔴 spelling correction
+        word = correct_word(word, vocabulary)
 
         return word
 
@@ -27,7 +36,7 @@ def normalize_parsed(parsed):
     if P:
         parsed["P"] = [normalize_word(w) for w in P]
 
-    # normalize cause (string)
+    # normalize cause
     if C:
         words = C.split()
         words = [normalize_word(w) for w in words]
