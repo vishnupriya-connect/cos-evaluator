@@ -43,6 +43,27 @@ def validate_frame(frame, concepts):
             errors.append("missing entity (I)")
         if not C:
             errors.append("missing cause (C)")
+            # 🔴 CONCEPT RELATION VALIDATION (L8)
+    if I and C:
+        cause_text = C.lower()
+
+        for concept_item in concepts:
+            word = concept_item.get("word")
+            concept = concept_item.get("concept", {})
+
+            relations = concept.get("relations", {})
+
+            for rel, targets in relations.items():
+                for target in targets:
+                    if target in cause_text:
+                        break
+                else:
+                    continue
+                break
+            else:
+                errors.append(
+                    f"weak relation: '{word}' has no known relation with '{cause_text}'"
+                )
 
     # 🔴 HARD RULE: if entity missing → invalid
     if not I:
