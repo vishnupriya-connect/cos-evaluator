@@ -1,9 +1,10 @@
-def generate_feedback(frame_validation, pass_validation):
+def generate_feedback(frame_validation, pass_validation, concepts):
     feedback = []
 
+    # collect all errors
     errors = []
-    errors.extend(frame_validation["errors"])
-    errors.extend(pass_validation["errors"])
+    errors.extend(frame_validation.get("errors", []))
+    errors.extend(pass_validation.get("errors", []))
 
     # filter internal-only errors
     filtered_errors = []
@@ -14,6 +15,11 @@ def generate_feedback(frame_validation, pass_validation):
 
     errors = filtered_errors
 
+    # 🔴 if no errors → no feedback
+    if not errors:
+        return []
+
+    # process each error
     for err in errors:
 
         # 🔴 ENTITY MISSING
@@ -37,11 +43,34 @@ def generate_feedback(frame_validation, pass_validation):
                 "message": "Provide a cause or reason for the statement."
             })
 
-        # 🔴 INVALID FRAME
-        elif "invalid frame" in err:
+        # 🔴 CONCEPT-AWARE FEEDBACK
+        elif "concept violation" in err:
+
+            # extract entity + action
+            try:
+                parts = err.split("'")
+                entity = parts[1]
+                action = parts[3]
+            except:
+                entity = "this entity"
+                action = "this action"
+
+            # find concept category
+            category = None
+            for c in concepts:
+                if c.get("word") == entity:
+                    concept = c.get("concept", {})
+                    category = concept.get("category")
+                    break
+
+            if category:
+                message = f"'{entity}' is {category}, so it cannot perform '{action}'."
+            else:
+                message = f"'{entity}' cannot perform '{action}' based on its nature."
+
             feedback.append({
-                "type": "structure",
-                "message": "The sentence structure is incomplete or unclear."
+                "type": "semantic",
+                "message": message
             })
 
         # 🔴 CAUSE DIRECTION ERROR
@@ -51,20 +80,11 @@ def generate_feedback(frame_validation, pass_validation):
                 "message": "Your cause and effect are reversed. Rewrite as: effect because cause."
             })
 
-        # 🔴 GENERIC FALLBACK
-        # else:
-        #     feedback.append({
-        #         "type": "general",
-        #         "message": err
-        #     })
+        # 🔴 OTHER ERRORS → ignore (no noisy fallback here)
         else:
-            # Only show generic message if nothing else mapped
-            feedback.append({
-                "type": "general",
-                "message": "The reasoning or structure needs improvement."
-            })
+            pass
 
-    # remove duplicates
+    # remove duplicate messages
     unique_feedback = []
     seen = set()
 
@@ -73,5 +93,12 @@ def generate_feedback(frame_validation, pass_validation):
         if msg not in seen:
             seen.add(msg)
             unique_feedback.append(item)
+
+    # 🔴 fallback only if errors exist but none mapped
+    if not unique_feedback:
+        unique_feedback.append({
+            "type": "general",
+            "message": "The sentence needs improvement."
+        })
 
     return unique_feedback

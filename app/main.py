@@ -34,7 +34,7 @@ def run_pipeline(text):
     # L11 → Evaluation
     score = score_evaluation(validation, pass_validation)
 
-    feedback = generate_feedback(validation, pass_validation)
+    feedback = generate_feedback(validation, pass_validation, concepts)
 
     suggestion = generate_suggestion(parsed, intent, frame, pass_validation)
 
