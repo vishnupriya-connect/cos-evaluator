@@ -1,70 +1,43 @@
-import sys
-import os
-
-# Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
 import streamlit as st
+import requests
 
-from parser.parser import parse_text
-from parser.intent_detector import detect_intent
-from frames.frame_engine import detect_frame
-from frames.pass_engine import generate_pass
-from evaluation.validator import validate_frame
-from evaluation.pass_validator import validate_pass
-from evaluation.scorer import score_evaluation
-from evaluation.feedback import generate_feedback
-from evaluation.suggester import generate_suggestion
-from output.formatter import format_output
+API_URL = "https://cos-evaluator.onrender.com/evaluate"
 
+st.set_page_config(page_title="COS Evaluator", layout="wide")
 
-st.set_page_config(page_title="COS Reasoning Evaluator", layout="wide")
+st.title("🧠 COS Reasoning Evaluator")
 
-st.title("🧠 COS Reasoning Evaluator (v1)")
+user_input = st.text_area("Enter your answer:")
 
-user_input = st.text_input("Enter your sentence:")
+debug = st.checkbox("Show Debug Info")
 
 if st.button("Evaluate") and user_input:
 
-    # PIPELINE
-    parsed = parse_text(user_input)
-    intent = detect_intent(parsed)
-    frame = detect_frame(parsed)
-    cog_pass = generate_pass(intent, frame)
-    validation = validate_frame(frame)
-    pass_validation = validate_pass(cog_pass, frame, intent)
-    score = score_evaluation(validation, pass_validation)
-    feedback = generate_feedback(validation, pass_validation)
-    suggestion = generate_suggestion(parsed, intent, frame, pass_validation)
+    params = {"debug": str(debug).lower()}
 
-    result = {
-        "input": user_input,
-        "frame": frame,
-        "validation": validation,
-        "pass_validation": pass_validation,
-        "score": score,
-        "intent": intent,
-        "pass": cog_pass,
-        "feedback": feedback,
-        "suggestion": suggestion
-    }
+    response = requests.post(
+        API_URL,
+        params=params,
+        json={"text": user_input}
+    )
 
-    # DISPLAY
+    data = response.json()
 
-    # 🔴 SCORE (PRIMARY)
-    st.metric("Final Score", score["final_score"])
+    # 🔴 DEBUG MODE
+    if debug:
+        st.subheader("Clean Output")
+        st.json(data.get("clean"))
 
-    # 🔴 SUGGESTION (MOST IMPORTANT ACTION)
-    if suggestion:
-        st.subheader("Suggested Correction")
-        st.success(suggestion)
+        st.subheader("Full Debug")
+        st.json(data.get("debug"))
 
-    # 🔴 FEEDBACK (GUIDANCE)
-    if feedback:
-        st.subheader("Feedback")
-        for f in feedback:
-            st.write(f"- {f['message']}")
+    else:
+        st.metric("Score", data.get("score"))
 
-    # 🔴 DEBUG VIEW (COLLAPSIBLE)
-    with st.expander("Show Detailed Analysis"):
-        st.text(format_output(result))
+        if data.get("suggestion"):
+            st.success(data.get("suggestion"))
+
+        if data.get("feedback"):
+            st.subheader("Feedback")
+            for f in data["feedback"]:
+                st.write(f"- {f['message']}")
