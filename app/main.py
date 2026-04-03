@@ -25,7 +25,7 @@ def run_pipeline(text):
     concepts = map_concepts(parsed)
 
     # 🔴 L4 → PASS GENERATION (NEW)
-    cog_pass = generate_pass(intent, frame)
+    cog_pass = generate_pass(intent, frame, concepts)
 
     # 🔴 NEW — PASS VALIDATION
     pass_validation = validate_pass(cog_pass, frame, intent)
