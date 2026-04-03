@@ -1,1 +1,4 @@
-streamlit
+streamlit #ui
+fastapi #api
+uvicorn #server
+pydantic #validation
