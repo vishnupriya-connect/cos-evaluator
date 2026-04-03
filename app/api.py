@@ -1,24 +1,20 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 import time
 
 from app.main import run_pipeline
-# from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="COS Reasoning Evaluator API")
 
-# # ✅ ADD HERE
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 
-# 🔴 Request Schema
+# 🔴 Request Schema (Single)
 class InputText(BaseModel):
     text: str = Field(..., min_length=1, max_length=500)
+
+
+# 🔴 Batch Schema
+class BatchInput(BaseModel):
+    texts: list[str] = Field(..., min_items=1, max_items=50)
 
 
 # 🔴 Health Check
@@ -27,30 +23,29 @@ def home():
     return {"message": "COS API is running"}
 
 
-# 🔴 SAFE EXECUTION WRAPPER
-def safe_run(text: str):
+# 🔴 Core Safe Execution (SINGLE CALL ONLY)
+def execute_pipeline(text: str):
     start_time = time.time()
 
     try:
-        result = run_pipeline(text)
+        full_result = run_pipeline(text)
 
-        # enforce structure (no missing keys)
-        safe_result = {
-            "input": result.get("input", text),
-            "intent": result.get("intent", "unknown"),
-            "score": result.get("score", {}).get("final_score", 0.0),
-            "feedback": result.get("feedback", []),
-            "suggestion": result.get("suggestion", None),
+        clean_result = {
+            "input": full_result.get("input", text),
+            "intent": full_result.get("intent", "unknown"),
+            "score": full_result.get("score", {}).get("final_score", 0.0),
+            "feedback": full_result.get("feedback", []),
+            "suggestion": full_result.get("suggestion", None),
             "meta": {
                 "processing_time_ms": round((time.time() - start_time) * 1000, 2),
                 "status": "success"
             }
         }
 
-        return safe_result
+        return full_result, clean_result
 
     except Exception as e:
-        return {
+        error_result = {
             "input": text,
             "intent": "unknown",
             "score": 0.0,
@@ -66,64 +61,41 @@ def safe_run(text: str):
             }
         }
 
+        return None, error_result
 
-# 🔴 Core Endpoint
+
+# 🔴 SINGLE INPUT ENDPOINT
 @app.post("/evaluate")
 def evaluate(input_data: InputText, debug: bool = Query(False)):
 
-    result = safe_run(input_data.text)
+    full_result, clean_result = execute_pipeline(input_data.text)
 
     if debug:
-        # full pipeline (unsafe but useful)
-        try:
-            full = run_pipeline(input_data.text)
-            return {
-                "clean": result,
-                "debug": full
-            }
-        except:
-            return result
+        return {
+            "clean": clean_result,
+            "debug": full_result if full_result else {}
+        }
 
-    return result
+    return clean_result
 
 
-# 🔴 Batch Input
-class BatchInput(BaseModel):
-    texts: list[str]
-
-    @classmethod
-    def validate(cls, value):
-        if not value.get("texts"):
-            raise ValueError("texts list cannot be empty")
-
-        cleaned = [t for t in value["texts"] if isinstance(t, str) and t.strip()]
-
-        if not cleaned:
-            raise ValueError("All inputs are empty")
-
-        value["texts"] = cleaned
-        return value
-
-
+# 🔴 BATCH ENDPOINT
 @app.post("/evaluate-batch")
 def evaluate_batch(input_data: BatchInput, debug: bool = Query(False)):
 
     results = []
 
     for text in input_data.texts:
-        result = safe_run(text)
+
+        full_result, clean_result = execute_pipeline(text)
 
         if debug:
-            try:
-                full = run_pipeline(text)
-                results.append({
-                    "clean": result,
-                    "debug": full
-                })
-            except:
-                results.append(result)
+            results.append({
+                "clean": clean_result,
+                "debug": full_result if full_result else {}
+            })
         else:
-            results.append(result)
+            results.append(clean_result)
 
     return {
         "count": len(results),
