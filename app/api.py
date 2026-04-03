@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 import time
-
+from evaluation.db import init_db
 from app.main import run_pipeline
 
 app = FastAPI(title="COS Reasoning Evaluator API")
-
+init_db()
 
 # 🔴 Request Schema (Single)
 class InputText(BaseModel):
