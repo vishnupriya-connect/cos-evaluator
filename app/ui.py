@@ -11,12 +11,13 @@ from parser.intent_detector import detect_intent
 from frames.frame_engine import detect_frame
 from frames.pass_engine import generate_pass
 from evaluation.validator import validate_frame
+from evaluation.scorer import score_frame
+from output.formatter import format_output
 from evaluation.pass_validator import validate_pass
-from evaluation.scorer import score_evaluation
 from evaluation.feedback import generate_feedback
 from evaluation.suggester import generate_suggestion
-from output.formatter import format_output
-from main import *
+from concepts.concept_mapper import map_concepts
+from evaluation.grammar import check_grammar
 
 
 st.set_page_config(page_title="COS Reasoning Evaluator", layout="wide")
