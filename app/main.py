@@ -46,9 +46,14 @@ def run_pipeline(text):
                         grammar["errors"]
                         )
     
-    feedback = generate_feedback(validation, pass_validation, concepts)
+    # 🔴 merge grammar errors ONLY for feedback (not for validation/scoring)
+    combined_validation = {
+        "errors": validation["errors"] + grammar["errors"]
+    }
 
-    suggestion = generate_suggestion(frame, validation, concepts)
+    feedback = generate_feedback(combined_validation, pass_validation, concepts)
+
+    suggestion = generate_suggestion(frame, validation, concepts, grammar)
 
     # L6 → Output
     # attach

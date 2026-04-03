@@ -80,6 +80,25 @@ def generate_feedback(frame_validation, pass_validation, concepts):
                 "message": "Your cause and effect are reversed. Rewrite as: effect because cause."
             })
 
+        elif "grammar violation" in err:
+
+            # 🔴 skip grammar feedback if concept error exists
+            if any("concept violation" in e for e in errors):
+                continue
+
+            try:
+                parts = err.split("'")
+                entity = parts[1]
+                correct = parts[3]
+            except:
+                entity = "this subject"
+                correct = "correct form"
+
+            feedback.append({
+                "type": "grammar",
+                "message": f"Use correct verb form: '{entity} {correct}'."
+            })
+
         # 🔴 OTHER ERRORS → ignore (no noisy fallback here)
         else:
             pass

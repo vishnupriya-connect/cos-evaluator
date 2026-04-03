@@ -1,13 +1,21 @@
-def generate_suggestion(frame, validation, concepts):
+def generate_suggestion(frame, validation, concepts, grammar):
+
     errors = validation.get("errors", [])
 
-    if not errors:
+    grammar_errors = grammar.get("errors", [])
+
+    # only return None if BOTH are empty
+    if not errors and not grammar_errors:
         return None
+
+    has_concept_error = any("concept violation" in e for e in errors)
 
     for err in errors:
 
-        # 🔴 CONCEPT VIOLATION
-        if "concept violation" in err:
+        # 🔴 PRIORITY 1 — CONCEPT VIOLATION
+        if has_concept_error:
+            if "concept violation" not in err:
+                continue
 
             try:
                 parts = err.split("'")
@@ -28,12 +36,21 @@ def generate_suggestion(frame, validation, concepts):
 
             allowed_actions = concept_data.get("can_do", [])
 
-            # ✅ CASE 1 — entity can do something → suggest valid action
             if allowed_actions:
-                correct_action = allowed_actions[0]
-                return f"{entity} {correct_action}"
+                return f"{entity} {allowed_actions[0]}"
 
-            # ❌ CASE 2 — entity cannot perform any action → suggest rethink
             return f"Use an entity that can perform '{action}' (e.g., dog {action})"
 
+
+    # 🔴 PRIORITY 2 — GRAMMAR FIX (ONLY if no concept error)
+    for err in grammar.get("errors", []):
+        if "grammar violation" in err:
+            try:
+                parts = err.split("'")
+                entity = parts[1]
+                correct = parts[3]
+                return f"{entity} {correct}"
+            except:
+                return None
+            
     return None
