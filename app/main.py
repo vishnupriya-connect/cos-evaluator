@@ -11,6 +11,7 @@ from evaluation.suggester import generate_suggestion
 from concepts.concept_mapper import map_concepts
 from evaluation.grammar import check_grammar
 from parser.normalizer import normalize_parsed
+from evaluation.logger import log_evaluation
 
 def run_pipeline(text):
     # L6 → Parsing
@@ -76,7 +77,7 @@ def run_pipeline(text):
         "grammar": grammar,
     }
 
-    # return format_output(result)
+    log_evaluation(result)
     return result
 
 if __name__ == "__main__":
