@@ -10,22 +10,17 @@ def normalize_parsed(parsed):
     vocabulary = get_vocabulary()
 
     def normalize_word(word):
-        # do not normalize short words
         if len(word) <= 3:
             return word
 
-        # protected words
         protected = {"is", "was", "has", "this", "his"}
         if word in protected:
             return word
 
-        # plural → singular
         if word.endswith("s"):
             word = word[:-1]
 
-        # 🔴 spelling correction
         word = correct_word(word, vocabulary)
-
         return word
 
     # normalize entity
@@ -33,9 +28,10 @@ def normalize_parsed(parsed):
         parsed["I"] = [normalize_word(w) for w in I]
 
     # normalize cause
-# 🔴 normalize cause (ONLY spelling correction, no structural normalization)
     if C:
         words = C.split()
         corrected_words = [correct_word(w, vocabulary) for w in words]
         parsed["C"] = " ".join(corrected_words)
-        return parsed
+
+    # 🔴 CRITICAL FIX
+    return parsed

@@ -3,10 +3,18 @@ from pydantic import BaseModel, Field
 import time
 
 from app.main import run_pipeline
-
+# from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="COS Reasoning Evaluator API")
 
+# # ✅ ADD HERE
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # 🔴 Request Schema
 class InputText(BaseModel):
@@ -81,7 +89,20 @@ def evaluate(input_data: InputText, debug: bool = Query(False)):
 
 # 🔴 Batch Input
 class BatchInput(BaseModel):
-    texts: list[str] = Field(..., min_items=1, max_items=50)
+    texts: list[str]
+
+    @classmethod
+    def validate(cls, value):
+        if not value.get("texts"):
+            raise ValueError("texts list cannot be empty")
+
+        cleaned = [t for t in value["texts"] if isinstance(t, str) and t.strip()]
+
+        if not cleaned:
+            raise ValueError("All inputs are empty")
+
+        value["texts"] = cleaned
+        return value
 
 
 @app.post("/evaluate-batch")
