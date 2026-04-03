@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 import time
 from evaluation.db import init_db
 from app.main import run_pipeline
+from evaluation.db import fetch_recent, fetch_low_scores, fetch_stats
 
 app = FastAPI(title="COS Reasoning Evaluator API")
 init_db()
@@ -101,3 +102,40 @@ def evaluate_batch(input_data: BatchInput, debug: bool = Query(False)):
         "count": len(results),
         "results": results
     }
+
+@app.get("/evaluations")
+def get_recent(limit: int = 10):
+    rows = fetch_recent(limit)
+
+    return {
+        "count": len(rows),
+        "results": [
+            {
+                "timestamp": r[0],
+                "input": r[1],
+                "intent": r[2],
+                "score": r[3]
+            }
+            for r in rows
+        ]
+    }
+
+@app.get("/evaluations/low-score")
+def get_low_scores(threshold: float = 0.5):
+    rows = fetch_low_scores(threshold)
+
+    return {
+        "count": len(rows),
+        "results": [
+            {
+                "input": r[0],
+                "score": r[1]
+            }
+            for r in rows
+        ]
+    }
+
+@app.get("/evaluations/stats")
+def get_stats():
+    return fetch_stats()
+
