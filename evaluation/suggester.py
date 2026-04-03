@@ -1,30 +1,39 @@
-def generate_suggestion(parsed, intent, frame, pass_validation):
-    data = frame.get("data", {})
+def generate_suggestion(frame, validation, concepts):
+    errors = validation.get("errors", [])
 
-    I = data.get("I")
-    P = data.get("P")
-    C = data.get("C")
+    if not errors:
+        return None
 
-    # 🔴 CASE 1 — INVALID STRUCTURE (no entity)
-    if not I:
-        if P:
-            return "Add a subject: e.g., 'Something " + " ".join(P) + "'"
-        return "Add a clear subject and action."
-
-    # 🔴 CASE 2 — CAUSE DIRECTION ERROR
-    errors = pass_validation.get("errors", [])
     for err in errors:
-        if "invalid cause direction" in err:
-            if I and C:
-                return f"{C} because {' '.join(I)}"
 
-    # 🔴 CASE 3 — ENTITY PRESENT BUT NO ACTION (GENERAL RULE)
-    if I and not P and not C:
-        return f"{' '.join(I)} <add action>"
+        # 🔴 CONCEPT VIOLATION
+        if "concept violation" in err:
 
-    # 🔴 CASE 4 — MISSING CAUSE
-    if intent == "explain" and not C:
-        return f"{' '.join(I)} {' '.join(P) if P else ''} because <cause>"
+            try:
+                parts = err.split("'")
+                entity = parts[1]
+                action = parts[3]
+            except:
+                return None
 
-    # 🔴 CASE 5 — VALID (no suggestion needed)
+            # find concept
+            concept_data = None
+            for c in concepts:
+                if c.get("word") == entity:
+                    concept_data = c.get("concept", {})
+                    break
+
+            if not concept_data:
+                return None
+
+            allowed_actions = concept_data.get("can_do", [])
+
+            # ✅ CASE 1 — entity can do something → suggest valid action
+            if allowed_actions:
+                correct_action = allowed_actions[0]
+                return f"{entity} {correct_action}"
+
+            # ❌ CASE 2 — entity cannot perform any action → suggest rethink
+            return f"Use an entity that can perform '{action}' (e.g., dog {action})"
+
     return None

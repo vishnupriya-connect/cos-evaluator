@@ -36,7 +36,7 @@ def run_pipeline(text):
 
     feedback = generate_feedback(validation, pass_validation, concepts)
 
-    suggestion = generate_suggestion(parsed, intent, frame, pass_validation)
+    suggestion = generate_suggestion(frame, validation, concepts)
 
     # L6 → Output
     # attach
