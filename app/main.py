@@ -8,6 +8,7 @@ from output.formatter import format_output
 from evaluation.pass_validator import validate_pass
 from evaluation.feedback import generate_feedback
 from evaluation.suggester import generate_suggestion
+from concepts.concept_mapper import map_concepts
 
 def run_pipeline(text):
     # L6 → Parsing
@@ -18,6 +19,8 @@ def run_pipeline(text):
 
     # L5 → Frame
     frame = detect_frame(parsed)
+
+    concepts = map_concepts(parsed)
 
     # 🔴 L4 → PASS GENERATION (NEW)
     cog_pass = generate_pass(intent, frame)
@@ -46,7 +49,8 @@ def run_pipeline(text):
         "intent": intent,
         "pass": cog_pass,
         "feedback": feedback,
-        "suggestion": suggestion
+        "suggestion": suggestion,
+        "concepts": concepts,
     }
 
     return format_output(result)
