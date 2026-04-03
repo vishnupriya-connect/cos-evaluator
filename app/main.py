@@ -10,10 +10,15 @@ from evaluation.feedback import generate_feedback
 from evaluation.suggester import generate_suggestion
 from concepts.concept_mapper import map_concepts
 from evaluation.grammar import check_grammar
+from parser.normalizer import normalize_parsed
 
 def run_pipeline(text):
     # L6 → Parsing
     parsed = parse_text(text)
+
+    # 🔴 NORMALIZATION (Step 28)
+    parsed = normalize_parsed(parsed)
+
     grammar_errors = check_grammar(parsed)
 
     # L4 → Intent
