@@ -3,7 +3,9 @@ import os
 from datetime import datetime
 
 
-DB_FILE = "data/evaluations.db"
+# DB_FILE = "data/evaluations.db"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_FILE = os.path.join(BASE_DIR, "data", "evaluations.db")
 
 
 def init_db():

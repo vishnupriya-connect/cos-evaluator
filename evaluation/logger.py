@@ -3,7 +3,9 @@ import os
 from datetime import datetime
 
 
-LOG_FILE = "logs/evaluations.jsonl"
+# LOG_FILE = "logs/evaluations.jsonl"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_FILE = os.path.join(BASE_DIR, "logs", "evaluations.jsonl")
 
 
 def log_evaluation(result):
