@@ -3,16 +3,18 @@ from parser.intent_detector import detect_intent
 from frames.frame_engine import detect_frame
 from frames.pass_engine import generate_pass
 from evaluation.validator import validate_frame
-from evaluation.scorer import score_evaluation
+from evaluation.scorer import score_frame
 from output.formatter import format_output
 from evaluation.pass_validator import validate_pass
 from evaluation.feedback import generate_feedback
 from evaluation.suggester import generate_suggestion
 from concepts.concept_mapper import map_concepts
+from evaluation.grammar import check_grammar
 
 def run_pipeline(text):
     # L6 → Parsing
     parsed = parse_text(text)
+    grammar_errors = check_grammar(parsed)
 
     # L4 → Intent
     intent = detect_intent(parsed)
@@ -31,9 +33,19 @@ def run_pipeline(text):
     # L4 → Validation
     validation = validate_frame(frame, concepts)
 
-    # L11 → Evaluation
-    score = score_evaluation(validation, pass_validation)
+   # keep grammar separate (do NOT merge into validation)
+    grammar = {
+        "is_valid": len(grammar_errors) == 0,
+        "errors": grammar_errors
+    }
 
+    # L11 → Evaluation
+    score = score_frame(frame["valid"],
+                        pass_validation["is_valid"],
+                        validation["errors"],
+                        grammar["errors"]
+                        )
+    
     feedback = generate_feedback(validation, pass_validation, concepts)
 
     suggestion = generate_suggestion(frame, validation, concepts)
@@ -51,6 +63,7 @@ def run_pipeline(text):
         "feedback": feedback,
         "suggestion": suggestion,
         "concepts": concepts,
+        "grammar": grammar,
     }
 
     return format_output(result)

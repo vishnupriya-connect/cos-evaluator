@@ -1,53 +1,33 @@
-def score_evaluation(frame_validation, pass_validation):
-    errors = []
-    errors.extend(frame_validation["errors"])
-    errors.extend(pass_validation["errors"])
+def score_frame(frame_valid, pass_valid, errors, grammar_errors):
 
-    frame_valid = frame_validation["is_valid"]
-    pass_valid = pass_validation["is_valid"]
-
-    # 🔴 TIER 1 — NO STRUCTURE → HARD FAIL
+    # 🔴 structural failure → worst
     if not frame_valid:
-        # 🔴 distinguish structural vs concept failure
-        has_concept_error = any("concept violation" in err for err in errors)
-
-        if has_concept_error:
-            return {
-                "final_score": 0.2,
-                "error_count": len(errors),
-                "errors": errors
-            }
-
         return {
             "final_score": 0.0,
             "error_count": len(errors),
             "errors": errors
         }
 
-    # 🔴 TIER 2 — STRUCTURE OK, REASONING WRONG
-    if frame_valid and not pass_valid:
-        score = 0.5
+    score = 1.0
 
-        for err in errors:
+    # 🔴 concept / reasoning errors (major)
+    for err in errors:
+        if "concept violation" in err:
+            score -= 0.7
+        elif "invalid cause direction" in err:
+            score -= 0.3
+        else:
+            score -= 0.2
 
-            # 🔴 CONCEPT ERROR (HIGH IMPACT)
-            if "concept violation" in err:
-                score -= 0.5
+    # 🔴 grammar errors (minor)
+    for err in grammar_errors:
+        score -= 0.2
 
-            # 🔴 STRUCTURAL REASONING ERROR
-            elif "invalid cause direction" in err:
-                score -= 0.2
+    if score < 0.0:
+        score = 0.0
 
-            # 🔴 GENERIC ERROR
-            else:
-                score -= 0.1
-
-        if score < 0.0:
-            score = 0.0
-
-    # 🔴 TIER 3 — FULLY VALID
     return {
-        "final_score": 1.0,
-        "error_count": 0,
-        "errors": []
+        "final_score": round(score, 2),
+        "error_count": len(errors) + len(grammar_errors),
+        "errors": errors + grammar_errors
     }
