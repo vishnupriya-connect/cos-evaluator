@@ -76,7 +76,8 @@ def run_pipeline(text):
         "grammar": grammar,
     }
 
-    return format_output(result)
+    # return format_output(result)
+    return result
 
 if __name__ == "__main__":
     print("=== COS Reasoning Evaluator v1 ===")
@@ -84,5 +85,4 @@ if __name__ == "__main__":
 
     output = run_pipeline(user_input)
     print("\n--- OUTPUT ---")
-    # print(output)
-    print("\n".join(output))
+    print("\n".join(format_output(output)))

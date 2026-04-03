@@ -32,14 +32,10 @@ def normalize_parsed(parsed):
     if I:
         parsed["I"] = [normalize_word(w) for w in I]
 
-    # normalize property/action
-    if P:
-        parsed["P"] = [normalize_word(w) for w in P]
-
     # normalize cause
+# 🔴 normalize cause (ONLY spelling correction, no structural normalization)
     if C:
         words = C.split()
-        words = [normalize_word(w) for w in words]
-        parsed["C"] = " ".join(words)
-
-    return parsed
+        corrected_words = [correct_word(w, vocabulary) for w in words]
+        parsed["C"] = " ".join(corrected_words)
+        return parsed
